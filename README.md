@@ -22,5 +22,49 @@
 - แบบฟอร์มคำขอใช้บริการหรือเชื่อมโยงข้อมูล
 - หนังสืออนุญาตจากหน่วยงานเจ้าของข้อมูล
 - เอกสารประกอบอื่นตามหลักเกณฑ์ที่กำหนด
+  
+##แนวทางการพัฒนาระบบโดยใช้ API
+หากหน่วยงานท่านมีระบบการให้บริการผ่านช่องทางออนไลน์ (e-Service) หรือระบบสนับสนุนการให้บริการ (Backend) อยู่แล้ว และต้องการเชื่อมโยงข้อมูลต่างๆ ขั้นต้นกับระบบของหน่วยงานท่าน ท่านสามารถเชื่อมโยงข้อมูลต่างๆ ผ่าน Application Program Interface (API) ได้ โดย API ดังกล่าว ใช้มาตรฐานต่างๆ ดังนี้
+•	ใช้โปรโตคอล RESTful Web Service ดูรายละเอียดเพิ่มเติมที่ https://en.wikipedia.org/wiki/Representational_state_transfer
+•	รักษาความปลอดภัยในการรับส่งข้อมูลด้วย HTTPS ดูรายละเอียดเพิ่มเติมที่ https://en.wikipedia.org/wiki/HTTPS
+•	ใช้ข้อมูลในรูปแบบของ JSON (Javascript Object Notation) เป็นหลัก ทั้งในคำขอ (Request) และคำตอบกลับข้อมูล (Response)
+•	ข้อความต่างๆ (text) ใช้ Unicode Transformation Format (UTF-8)
+•	ข้อมูลที่เป็นไฟล์แนบ หรือภาพ (Binary Data) ให้เข้ารหัสในรูปแบบ Base 64 Encoding https://en.wikipedia.org/wiki/Base64
+•	สถานภาพของการร้องขอ (Response Code) อ้างอิงได้จากสถานภาพของโปรโตคอล HTTP เช่น
+o	Status Code = 200 หมายถึง การร้องขอที่สำเร็จ
+o	Status Code = 401 หมายถึง ท่านไม่มีสิทธิในการเรียกดูข้อมูลดังกล่าว
+o	Status Code = 404 หมายถึง ไม่มีข้อมูลดังกล่าว
+ดู Status Code ทั้งหมดได้ที่นี่ คลิกเพื่อเปิดดูรายละเอียด
+
+ขั้นตอนที่ 1 การขอ Token
+เรียกใช้ API สำหรับตรวจสอบสิทธิและขอ Token ตามรายละเอียดดังนี้
+รายการ	รายละเอียด
+API Endpoint	https://api.egov.go.th/ws/auth/validate?
+Method	GET
+Request Parameters	ConsumerSecret=[Secret]
+AgentID = [เลขประจำตัวประชาชน 13 หลัก หรือชื่อระบบภาษาอังกฤษ] 
+**สำหรับไว้อ้างอิง log การเรียกใช้งานข้อมูลกับ Consumer-Key ที่ทางหน่วยงานลงทะเบียนไว้
+Request Header – Consumer-Key	Consumer-Key ที่ได้รับจาก สพร. ผ่านทางอีเมลที่ลงทะเบียนไว้
+Request Header – Content-Type	application/x-www-form-urlencoded; charset=utf-8
+ตัวอย่าง Request	https://api.egov.go.th/ws/auth/validate?ConsumerSecret=xxxxxxxxxxxxxx&AgentID=1234567890123
+ตัวอย่าง Response Body	{
+  "Result": "8e1ac089-0000-aaaa-0000-403c0c9ab867"
+}
+ผลลัพธ์	ค่า Result คือ Token (ชนิด String) สำหรับใช้เรียก API ต่าง ๆ
+
+หมายเหตุ: ให้ใช้ Consumer-Key และ ConsumerSecret ที่ได้รับ/ลงทะเบียนกับ สพร. จริง ไม่ใช้ค่าตัวอย่างในการเรียกใช้งาน
+
+ขั้นตอนที่ 2 การเรียกใช้ข้อมูล API
+เมื่อได้รับ Token แล้ว ให้เรียก API ปลายทางที่ต้องการใช้งาน โดยใช้ Method: ตามที่กำหนดของชุดข้อมูลและแนบ Token กับ Consumer Key ใน Request Headers ตามแนวทางที่ระบุในคู่มือ
+รายการ	รายละเอียด
+Method	ตามที่กำหนดของชุดข้อมูล
+Headers	แนบ Token ที่ได้รับจากขั้นตอนที่ 1 และ Consumer-Key
+API Endpoint / Request Body	กำหนดตาม API ของชุดข้อมูลที่หน่วยงานต้องการเรียกใช้
+
+ข้อควรระวัง
+•	เก็บรักษา Consumer-Key, ConsumerSecret และ Token เป็นข้อมูลสำหรับการเข้าถึงระบบ ไม่เปิดเผยแก่ผู้ที่ไม่เกี่ยวข้อง
+•	กรณีที่ไม่มีการเรียกใช้งาน API ใด ๆ Token มีอายุ 30 นาที 
+•	ในเอกสารเป็นเพียงตัวอย่าง ต้องใช้ Token ที่ได้รับจากการเรียก API จริง
+•	รายละเอียด Endpoint, Headers และ Request Body สำหรับเรียกข้อมูล ให้ยึดตามข้อกำหนดของ API ชุดข้อมูลนั้น ๆ
 
 
